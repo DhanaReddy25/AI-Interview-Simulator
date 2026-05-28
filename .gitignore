@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Streamlit cache
+.streamlit/
+
+# Environment & secrets
+.env
+*.key
+*.json
+
+# Reports & outputs
+*.pdf
+*.csv
+*.xlsx
+*.zip
+
+# OS-specific
+.DS_Store
+Thumbs.db
