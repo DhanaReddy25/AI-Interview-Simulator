@@ -1,16 +1,18 @@
-import streamlit as st
+
 import streamlit as st
 import matplotlib.pyplot as plt
 from fpdf import FPDF
 import PyPDF2
 import docx
 import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
 # -----------------------------
 # Configure Gemini
-import os
+# -----------------------------
+load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # -----------------------------
@@ -28,6 +30,17 @@ def transcribe_audio(audio_bytes):
     ])
     return response.text
 
+def evaluate_answer(question, answer):
+    prompt = f"""
+    Interview Question: {question}
+    Candidate Answer: {answer}
+
+    Please evaluate whether the answer is correct, partially correct, or incorrect.
+    Provide a short explanation highlighting strengths and weaknesses.
+    """
+    response = model.generate_content(prompt)
+    return response.text
+
 # -----------------------------
 # Streamlit App
 # -----------------------------
@@ -36,6 +49,7 @@ st.title("AI Interview Simulator")
 # Phase 1: Resume Upload
 resume_file = st.file_uploader("📂 Upload Resume (PDF/DOCX)", type=["pdf","docx"])
 resume_text = ""
+questions = ""
 if resume_file:
     if resume_file.type == "application/pdf":
         reader = PyPDF2.PdfReader(resume_file)
@@ -48,6 +62,7 @@ if resume_file:
     st.subheader("📌 Personalized Interview Questions")
     questions = generate_questions(resume_text)
     st.write(questions)
+
 # Phase 2: Direct Text Answer
 st.subheader("📝 Type Your Answer")
 typed_answer = st.text_area("Enter your interview response here:")
@@ -59,8 +74,8 @@ if typed_answer:
     # Metrics
     metrics = {
         "Word Count": len(transcript.split()),
-        "Filler Words": transcript.lower().count("um"),
-        "Words per Minute": 135  # Placeholder for consistency
+        "Filler Words": sum(transcript.lower().count(w) for w in ["um","uh","like"]),
+        "Words per Minute": 135  # Placeholder
     }
 
     st.subheader("📊 Voice/Text Metrics")
@@ -70,6 +85,11 @@ if typed_answer:
     st.subheader("💡 Feedback")
     st.write("Clear explanation, but reduce filler words. Confidence is good.")
 
+    # ✅ Answer Evaluation
+    if questions:
+        st.subheader("✅ Answer Evaluation")
+        evaluation = evaluate_answer(questions, typed_answer)
+        st.write(evaluation)
 
 # Phase 3: Readiness Score
 readiness_score = 78
@@ -103,9 +123,13 @@ if st.button("📄 Generate PDF Report"):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
+
+    # Sanitize transcript to avoid unsupported characters
+    safe_transcript = transcript.replace("—", "-")
+
     pdf.cell(200, 10, "Interview Report", ln=True, align="C")
     pdf.ln(10)
-    pdf.multi_cell(0, 10, f"Transcript: {transcript}")
+    pdf.multi_cell(0, 10, f"Transcript: {safe_transcript}")
     for k,v in metrics.items():
         pdf.cell(200, 10, f"{k}: {v}", ln=True)
     pdf.cell(200, 10, f"Readiness Score: {readiness_score}", ln=True)
@@ -115,4 +139,4 @@ if st.button("📄 Generate PDF Report"):
 
 # Phase 7: Integration Placeholder
 st.subheader("📤 Integration & Sharing")
-st.write("Future: Email/LinkedIn integration to share reports.")
+st.write("Future: Email")

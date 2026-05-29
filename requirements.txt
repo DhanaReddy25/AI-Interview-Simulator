@@ -4,3 +4,5 @@ python-docx
 matplotlib
 fpdf2
 google-generativeai
+python-dotenv
+
