@@ -1,142 +1,100 @@
-
 import streamlit as st
-import matplotlib.pyplot as plt
-from fpdf import FPDF
-import PyPDF2
-import docx
+import PyPDF2, docx, os, re
 import google.generativeai as genai
-import os
 from dotenv import load_dotenv
+
 
 # -----------------------------
 # Configure Gemini
 # -----------------------------
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # -----------------------------
-# Helper Functions
+# Unified Helper Function
 # -----------------------------
-def generate_questions(resume_text):
-    prompt = f"Generate 3 personalized interview questions based on this resume:\n{resume_text}"
-    response = model.generate_content(prompt)
-    return response.text
-
-def transcribe_audio(audio_bytes):
-    prompt = "Transcribe this audio interview answer:"
-    response = model.generate_content([
-        {"role": "user", "parts": [{"text": prompt}, {"inline_data": {"mime_type": "audio/wav", "data": audio_bytes}}]}
-    ])
-    return response.text
-
-def evaluate_answer(question, answer):
+def analyze_resume(resume_text, role, answer=None):
     prompt = f"""
-    Interview Question: {question}
-    Candidate Answer: {answer}
+    Candidate Resume: {resume_text}
+    Target Role: {role}
 
-    Please evaluate whether the answer is correct, partially correct, or incorrect.
-    Provide a short explanation highlighting strengths and weaknesses.
+    Tasks:
+    1. Generate 3 personalized interview questions.
+    2. Rate the resume (skills relevance, project quality, interview suitability, structure & formatting, length).
+    3. Provide a numeric score (0–100) and feedback (strengths, weaknesses, structure notes, length recommendation).
+    {f"4. Evaluate candidate answer: {answer}" if answer else ""}
     """
-    response = model.generate_content(prompt)
-    return response.text
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Error calling Gemini API: {e}"
+
+def extract_score(text):
+    match = re.search(r'(\d{1,3})/100', text)
+    if match:
+        return int(match.group(1))
+    return None
 
 # -----------------------------
-# Streamlit App
+# Streamlit Frontend
 # -----------------------------
+st.set_page_config(page_title="AI Interview Simulator", layout="wide")
 st.title("AI Interview Simulator")
 
-# Phase 1: Resume Upload
-resume_file = st.file_uploader("📂 Upload Resume (PDF/DOCX)", type=["pdf","docx"])
-resume_text = ""
-questions = ""
+# Initialize session state
+if "resume_text" not in st.session_state:
+    st.session_state.resume_text = ""
+if "role" not in st.session_state:
+    st.session_state.role = ""
+if "analysis_output" not in st.session_state:
+    st.session_state.analysis_output = ""
+
+# Step 1: Upload Resume
+st.header("Upload Resume")
+resume_file = st.file_uploader("Upload Resume (PDF/DOCX)", type=["pdf","docx"])
 if resume_file:
     if resume_file.type == "application/pdf":
         reader = PyPDF2.PdfReader(resume_file)
-        resume_text = " ".join([page.extract_text() for page in reader.pages])
+        st.session_state.resume_text = " ".join([page.extract_text() for page in reader.pages])
     elif resume_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         doc = docx.Document(resume_file)
-        resume_text = " ".join([para.text for para in doc.paragraphs])
-    st.success("Resume uploaded and parsed successfully!")
+        st.session_state.resume_text = " ".join([para.text for para in doc.paragraphs])
+    st.success("Resume uploaded successfully!")
 
-    st.subheader("📌 Personalized Interview Questions")
-    questions = generate_questions(resume_text)
-    st.write(questions)
+# Step 2: Enter Role
+st.header("Target Role")
+st.session_state.role = st.text_input("Enter the role you are applying for:")
 
-# Phase 2: Direct Text Answer
-st.subheader("📝 Type Your Answer")
+# Step 3: Analyze Resume
+if st.button("Analyze Resume"):
+    if st.session_state.resume_text and st.session_state.role:
+        st.session_state.analysis_output = analyze_resume(st.session_state.resume_text, st.session_state.role)
+        st.write(st.session_state.analysis_output)
+
+# Step 4: Answer Evaluation
+st.header("Type Your Answer")
 typed_answer = st.text_area("Enter your interview response here:")
+if st.button("Submit Answer"):
+    if typed_answer and st.session_state.resume_text and st.session_state.role:
+        st.session_state.analysis_output = analyze_resume(st.session_state.resume_text, st.session_state.role, typed_answer)
+        st.success("Answer submitted successfully!")
+        st.subheader("Feedback")
+        st.write(st.session_state.analysis_output)
+    else:
+        st.warning("Please upload a resume and enter a role first.")
 
-if typed_answer:
-    st.success("Answer submitted successfully!")
-    transcript = typed_answer  # Treat typed input as transcript
+# Step 5: Resume Rating
+st.header("Resume Rating")
+if st.button("Rate Resume"):
+    if st.session_state.resume_text and st.session_state.role:
+        st.session_state.analysis_output = analyze_resume(st.session_state.resume_text, st.session_state.role)
+        st.write(st.session_state.analysis_output)
 
-    # Metrics
-    metrics = {
-        "Word Count": len(transcript.split()),
-        "Filler Words": sum(transcript.lower().count(w) for w in ["um","uh","like"]),
-        "Words per Minute": 135  # Placeholder
-    }
-
-    st.subheader("📊 Voice/Text Metrics")
-    for k,v in metrics.items():
-        st.write(f"- {k}: {v}")
-
-    st.subheader("💡 Feedback")
-    st.write("Clear explanation, but reduce filler words. Confidence is good.")
-
-    # ✅ Answer Evaluation
-    if questions:
-        st.subheader("✅ Answer Evaluation")
-        evaluation = evaluate_answer(questions, typed_answer)
-        st.write(evaluation)
-
-# Phase 3: Readiness Score
-readiness_score = 78
-st.subheader("📈 Readiness Dashboard")
-fig, ax = plt.subplots()
-ax.barh(["Readiness"], [readiness_score], color="skyblue")
-ax.set_xlim(0,100)
-st.pyplot(fig)
-
-# Phase 4: Multi-Session Tracking
-st.subheader("📊 Multi-Session Progress")
-sessions = ["Session 1","Session 2","Session 3","Session 4","Session 5"]
-scores = [55,62,70,78,85]
-fig2, ax2 = plt.subplots()
-ax2.plot(sessions, scores, marker="o", color="green")
-ax2.set_ylim(0,100)
-ax2.set_title("Readiness Progress Over Sessions")
-st.pyplot(fig2)
-
-# Phase 5: Benchmarking
-st.subheader("📊 Peer Benchmarking")
-labels = ["Candidate","Peer Avg","Top 10%"]
-bench_scores = [78,72,90]
-fig3, ax3 = plt.subplots()
-ax3.bar(labels, bench_scores, color=["blue","gray","green"])
-ax3.set_ylim(0,100)
-st.pyplot(fig3)
-
-# Phase 6: PDF Report
-if st.button("📄 Generate PDF Report"):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-
-    # Sanitize transcript to avoid unsupported characters
-    safe_transcript = transcript.replace("—", "-")
-
-    pdf.cell(200, 10, "Interview Report", ln=True, align="C")
-    pdf.ln(10)
-    pdf.multi_cell(0, 10, f"Transcript: {safe_transcript}")
-    for k,v in metrics.items():
-        pdf.cell(200, 10, f"{k}: {v}", ln=True)
-    pdf.cell(200, 10, f"Readiness Score: {readiness_score}", ln=True)
-    pdf.output("Interview_Report.pdf")
-    with open("Interview_Report.pdf","rb") as f:
-        st.download_button("⬇️ Download Report", f, file_name="Interview_Report.pdf")
-
-# Phase 7: Integration Placeholder
-st.subheader("📤 Integration & Sharing")
-st.write("Future: Email")
+        score = extract_score(st.session_state.analysis_output)
+        if score is not None:
+            st.progress(score / 100)
+            st.write(f"Resume Score: {score}/100")
+    else:
+        st.warning("Please upload a resume and enter a role first.")

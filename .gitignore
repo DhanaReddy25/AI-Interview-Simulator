@@ -1,4 +1,4 @@
-# Python
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
@@ -6,8 +6,10 @@ __pycache__/
 # Streamlit cache
 .streamlit/
 
-# Environment & secrets
-.env
+# Local Streamlit secrets (must never be committed)
+.streamlit/secrets.toml
+
+# Environment & secrets (legacy, safe to keep)
 *.key
 *.json
 
@@ -17,8 +19,9 @@ __pycache__/
 *.xlsx
 *.zip
 
-# OS-specific
+# OS-specific junk
 .DS_Store
 Thumbs.db
+
+# Temporary files
 replace.txt
-.env
