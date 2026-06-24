@@ -1,95 +1,230 @@
-# AI Interview Simulator
+# 🤖 AI Interview Simulator
 
-An interactive Streamlit application that simulates AI-powered interview sessions to help users practice and improve their interview skills.
+An AI-powered **interactive interview preparation platform** built with **Streamlit** and **Google Gemini AI** that helps candidates improve their interview readiness through personalized question generation, resume analysis, and AI-driven feedback.
 
-## Features
+---
 
-- **AI-Powered Interviews**: Uses OpenAI API to generate realistic interview questions
-- **Real-Time Feedback**: Get instant evaluation of your answers
-- **PDF Support**: Upload and analyze PDF resumes or documents
-- **Performance Metrics**: Track your progress with detailed metrics
-- **Customizable Sessions**: Configure interview settings to match your needs
+## 📌 Overview
 
-## Tech Stack
+**AI Interview Simulator** is designed to simulate a real interview experience by analyzing a candidate's resume, generating role-specific interview questions, evaluating responses, and providing actionable improvement suggestions.
 
-- **Frontend**: Streamlit
-- **AI Model**: OpenAI GPT
-- **Language**: Python
+The application combines **Generative AI**, **Natural Language Processing**, and a simple user-friendly interface to create a personalized interview practice environment.
 
-## Installation
+---
 
-### Prerequisites
-- Python 3.8 or higher
-- OpenAI API key
+## ✨ Key Features
 
-### Setup
+### 📄 Resume Analysis
 
-1. Clone the repository:
+* Upload your resume in **PDF/DOCX format**
+* Automatically extracts resume content
+* Analyzes skills, experience, and projects
+
+### 🎯 Personalized Interview Questions
+
+* Generates questions based on:
+
+  * Resume content
+  * Target job role
+  * Candidate profile
+* Includes technical and behavioral interview questions
+
+### 📝 AI Answer Evaluation
+
+* Submit your interview answers
+* Receive instant AI-based evaluation:
+
+  * Strengths
+  * Weak areas
+  * Improvement suggestions
+  * Better answer recommendations
+
+### ⭐ Resume Scoring
+
+* Evaluates resume quality against a target role
+* Provides:
+
+  * Resume score
+  * Missing skills
+  * Optimization suggestions
+
+### ⚡ Optimized Gemini Integration
+
+* Uses a unified AI request workflow
+* Reduces unnecessary API calls
+* Improves efficiency while working with API limits
+
+---
+
+# 🚀 Getting Started
+
+## 1. Clone the Repository
+
 ```bash
 git clone https://github.com/DhanaReddy25/AI-Interview-Simulator.git
+
 cd AI-Interview-Simulator
 ```
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+---
 
-3. Install dependencies:
+## 2. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Set up your OpenAI API key:
-   - Create a `.streamlit/secrets.toml` file in the project root
-   - Add your API key:
-   ```toml
-   openai_api_key = "your_api_key_here"
-   ```
+---
 
-## Usage
+## 3. Configure Environment Variables
 
-Run the Streamlit app:
+Create a `.env` file in the project directory:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+Get your Gemini API key from:
+
+Google AI Studio
+https://ai.google.dev
+
+---
+
+## 4. Run the Application
+
 ```bash
 streamlit run app.py
 ```
 
-The app will open in your browser at `http://localhost:8501`
-
-## Project Structure
-
-```
-AI-Interview-Simulator/
-├── app.py                 # Main Streamlit application
-├── requirements.txt       # Python dependencies
-├── .gitignore            # Git ignore file
-└── README.md             # This file
-```
-
-## Dependencies
-
-See `requirements.txt` for a complete list of dependencies.
-
-## Contributing
-
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
-
-## License
-
-This project is open source and available under the MIT License.
-
-## Author
-
-**DhanaReddy25** - [GitHub Profile](https://github.com/DhanaReddy25)
-
-## Support
-
-For issues, questions, or suggestions, please open an issue on the [GitHub Issues page](https://github.com/DhanaReddy25/AI-Interview-Simulator/issues).
+The application will open in your browser.
 
 ---
 
-**Happy interviewing! 🚀**
+# 🏗️ Project Structure
+
+```
+AI-Interview-Simulator/
+│
+├── app.py              # Streamlit application
+├── requirements.txt    # Python dependencies
+├── README.md           # Project documentation
+├── .env                # Environment variables (not committed)
+│
+└── assets/             # Project resources (optional)
+```
+
+---
+
+# 🛠️ Tech Stack
+
+| Technology        | Purpose                            |
+| ----------------- | ---------------------------------- |
+| Python            | Backend logic                      |
+| Streamlit         | Web application interface          |
+| Google Gemini AI  | AI-powered analysis and generation |
+| NLP               | Resume and answer processing       |
+| PyPDF/DOCX Parser | Resume extraction                  |
+
+---
+
+# 🔐 API Usage & Limitations
+
+This project uses the **Google Gemini API**.
+
+### Free Tier Limitations
+
+* Limited requests per day
+* API calls may fail after quota exhaustion
+
+Example error:
+
+```
+ResourceExhausted: 429
+You exceeded your current quota
+```
+
+### Solutions
+
+* Wait until quota resets
+* Enable billing for increased limits
+* Use optimized API calls
+
+The application minimizes API usage through a unified AI processing approach.
+
+---
+
+# ⚙️ Troubleshooting
+
+## 1. ResourceExhausted (429)
+
+**Cause:**
+Gemini API quota limit exceeded.
+
+**Solution:**
+
+* Wait for quota reset
+* Enable billing
+* Reduce API requests
+
+---
+
+## 2. Gemini Returned Empty Response
+
+**Possible Causes:**
+
+* Invalid API key
+* API quota exceeded
+* Empty resume input
+
+**Fix:**
+
+* Verify `.env` configuration
+* Upload a valid resume
+* Check API availability
+
+---
+
+## 3. Resume Data Not Available
+
+**Cause:**
+Resume text is not stored properly.
+
+**Fix:**
+
+Ensure extracted resume content is saved using Streamlit session state:
+
+```python
+st.session_state.resume_text
+```
+
+---
+
+# 🎯 Future Improvements
+
+* Voice-based AI interviews
+* Real-time interview scoring
+* More detailed skill gap analysis
+* User authentication
+* Interview history dashboard
+
+---
+
+# 💡 Motivation
+
+Many candidates struggle with interview preparation because practice sessions are not personalized.
+
+AI Interview Simulator bridges this gap by providing an interactive AI-based platform that helps candidates practice, analyze mistakes, and continuously improve.
+
+---
+
+# 👩‍💻 Author
+
+**Dhana Laxmi**
+
+Computer Science Engineering Student
+Interested in AI, Machine Learning, and Software Development
+
+---
+
+⭐ If you find this project useful, consider giving it a star!
